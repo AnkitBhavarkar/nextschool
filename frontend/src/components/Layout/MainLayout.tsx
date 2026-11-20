@@ -8,7 +8,8 @@ import {
   MessageOutlined,
   SafetyCertificateOutlined,
   FileExcelOutlined,
-  WhatsAppOutlined
+  WhatsAppOutlined,
+  NotificationOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User } from '../../types';
@@ -40,6 +41,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ user, onLogout, children
 
   const adminMenuItems = [
     { key: '/admin', icon: <DashboardOutlined />, label: 'Overview' },
+    { key: '/admin/broadcasts', icon: <NotificationOutlined />, label: 'School Broadcasts' },
     { key: '/admin/whatsapp-connect', icon: <WhatsAppOutlined />, label: 'Connect WhatsApp' },
     { key: '/admin/import-data', icon: <FileExcelOutlined />, label: 'Import CSV Data' },
     { key: '/admin/teachers', icon: <TeamOutlined />, label: 'Teachers' },

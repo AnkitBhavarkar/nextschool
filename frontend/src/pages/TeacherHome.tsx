@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import { apiClient } from '../api/client';
 import { Student, Parent } from '../types';
+import { maskPhoneNumber } from '../utils/maskPhone';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -63,6 +64,30 @@ const TEMPLATE_DEFINITIONS: Record<string, { title: string; en: string; hi: stri
     en: 'Dear {parent_name}, here is the weekly progress report for {student_name} (Week {week_number}): Attendance: {attendance_percentage}%. Highlights: {highlights}. – NextSchool',
     hi: 'नमस्ते {parent_name}, {student_name} की साप्ताहिक प्रगति रिपोर्ट (सप्ताह {week_number}): उपस्थिति: {attendance_percentage}%. – NextSchool',
     requiredFields: ['highlights']
+  },
+  custom_message: {
+    title: '7. ✍️ Custom Message (विशेष कस्टम संदेश)',
+    en: 'Dear {parent_name},\nRegarding {student_name} ({grade} - {section}):\n{custom_text}\n\n– Teacher, NextSchool',
+    hi: 'नमस्ते {parent_name},\n{student_name} ({grade} - {section}) के संबंध में:\n{custom_text}\n\n– शिक्षक, NextSchool',
+    requiredFields: ['custom_text']
+  },
+  custom_meeting: {
+    title: '8. 🤝 Parent Meeting Request (मिलने का अनुरोध)',
+    en: 'Dear {parent_name}, I request you to kindly visit the school for a discussion regarding {student_name}\'s progress. Preferred time: {meeting_time}. – Teacher, NextSchool',
+    hi: 'नमस्ते {parent_name}, {student_name} की शैक्षणिक प्रगति पर चर्चा हेतु आपसे विद्यालय में मिलने का अनुरोध है। प्रस्तावित समय: {meeting_time}। – शिक्षक, NextSchool',
+    requiredFields: ['meeting_time']
+  },
+  custom_diary_note: {
+    title: '9. 📖 Diary / Class Note (डायरी नोट)',
+    en: 'Dear {parent_name}, Special Class Note for {student_name}: {note_details}. Please check and sign the student diary. – Teacher, NextSchool',
+    hi: 'नमस्ते {parent_name}, {student_name} के लिए विशेष कक्षा नोट: {note_details}। कृपया विद्यार्थी डायरी पर हस्ताक्षर करें। – शिक्षक, NextSchool',
+    requiredFields: ['note_details']
+  },
+  custom_health_alert: {
+    title: '10. 🩺 Health / Sick Bay Alert (स्वास्थ्य सूचना)',
+    en: 'Dear {parent_name}, health update regarding {student_name}: {health_details}. Please take necessary care. – Teacher, NextSchool',
+    hi: 'नमस्ते {parent_name}, {student_name} के स्वास्थ्य संबंधी सूचना: {health_details}। कृपया ध्यान दें। – शिक्षक, NextSchool',
+    requiredFields: ['health_details']
   }
 };
 
@@ -78,7 +103,11 @@ export const TeacherHome: React.FC = () => {
   const [customParams, setCustomParams] = useState<Record<string, string>>({
     incident_description: 'Disrupting classroom instruction',
     subject: 'Mathematics',
-    highlights: 'Active participation and improved assignment scores'
+    highlights: 'Active participation and improved assignment scores',
+    custom_text: 'Please ensure that the student carries their geometry box and practical notebook tomorrow for the lab assessment.',
+    meeting_time: 'Tomorrow during 4th Period (11:30 AM – 12:15 PM)',
+    note_details: 'Unit test evaluation copy has been distributed. Kindly sign on page 14.',
+    health_details: 'Student reported mild headache / fatigue in period 3. Resting in school infirmary.'
   });
   const [sending, setSending] = useState(false);
 
@@ -106,7 +135,7 @@ export const TeacherHome: React.FC = () => {
 
   const getPreviewText = () => {
     if (!selectedStudent || !selectedParent) return '';
-    const tmpl = TEMPLATE_DEFINITIONS[category];
+    const tmpl = TEMPLATE_DEFINITIONS[category] || TEMPLATE_DEFINITIONS['student_absent_today'];
     const raw = tmpl[language];
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const dayName = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -114,13 +143,19 @@ export const TeacherHome: React.FC = () => {
     return raw
       .replace('{parent_name}', selectedParent.full_name)
       .replace('{student_name}', selectedStudent.full_name)
+      .replace('{grade}', selectedStudent.grade)
+      .replace('{section}', selectedStudent.section)
       .replace('{date}', today)
       .replace('{day_of_week}', dayName)
       .replace('{incident_description}', customParams.incident_description || 'Incident')
       .replace('{subject}', customParams.subject || 'Classwork')
       .replace('{week_number}', '46')
       .replace('{attendance_percentage}', '94')
-      .replace('{highlights}', customParams.highlights || 'Great effort');
+      .replace('{highlights}', customParams.highlights || 'Great effort')
+      .replace('{custom_text}', customParams.custom_text || 'Important academic update.')
+      .replace('{meeting_time}', customParams.meeting_time || 'Tomorrow 11:30 AM')
+      .replace('{note_details}', customParams.note_details || 'Please review diary.')
+      .replace('{health_details}', customParams.health_details || 'Mild fever observed.');
   };
 
   const handleSendMessage = async () => {
@@ -207,7 +242,7 @@ export const TeacherHome: React.FC = () => {
                 <Space>
                   <WhatsAppOutlined style={{ color: hasConsent ? '#52c41a' : '#bfbfbf' }} />
                   <Text>{p.full_name} <span style={{ fontSize: 11, color: '#8c8c8c' }}>({p.relationship_type})</span></Text>
-                  <Text code>{p.whatsapp_number}</Text>
+                  <Text code>{maskPhoneNumber(p.whatsapp_number)}</Text>
                   <Tag color={hasConsent ? 'green' : 'red'}>
                     {hasConsent ? 'Consent Active' : 'Opted Out / Withdrawn'}
                   </Tag>
@@ -307,7 +342,7 @@ export const TeacherHome: React.FC = () => {
             <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', padding: 12, borderRadius: 6 }}>
               <Text strong>Target Recipient:</Text> {selectedParent.full_name} ({selectedParent.relationship_type})
               <br />
-              <Text strong>WhatsApp Number:</Text> <Text code>{selectedParent.whatsapp_number}</Text>
+              <Text strong>WhatsApp Number:</Text> <Text code>{maskPhoneNumber(selectedParent.whatsapp_number)}</Text>
               <br />
               <Text strong>Student:</Text> {selectedStudent.full_name} (Roll: {selectedStudent.roll_no} | {selectedStudent.grade} - {selectedStudent.section})
             </div>
@@ -354,6 +389,84 @@ export const TeacherHome: React.FC = () => {
                     rows={2}
                     value={customParams.highlights}
                     onChange={(e) => setCustomParams({ ...customParams, highlights: e.target.value })}
+                  />
+                </Form.Item>
+              )}
+
+              {category === 'custom_message' && (
+                <Form.Item label="Custom Message Body (कस्टम संदेश)" required>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Quick Suggestions: </Text>
+                    <Space size={[4, 6]} wrap>
+                      <Tag
+                        color="cyan"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setCustomParams({ ...customParams, custom_text: 'Please ensure that the student carries their geometry box and practical notebook tomorrow for the assessment.' })}
+                      >
+                        + Practical Copy Reminder
+                      </Tag>
+                      <Tag
+                        color="purple"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setCustomParams({ ...customParams, custom_text: 'Unit test evaluation copy has been distributed today. Kindly review, sign, and send it back tomorrow.' })}
+                      >
+                        + Test Copy Signature
+                      </Tag>
+                      <Tag
+                        color="orange"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setCustomParams({ ...customParams, custom_text: 'Student has shown tremendous improvement in mathematics class participation this week. Great job!' })}
+                      >
+                        + Special Praise
+                      </Tag>
+                      <Tag
+                        color="blue"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setCustomParams({ ...customParams, custom_text: 'Please submit the signed consent slip for the upcoming educational field visit by tomorrow.' })}
+                      >
+                        + Consent Slip
+                      </Tag>
+                    </Space>
+                  </div>
+                  <Input.TextArea
+                    rows={4}
+                    value={customParams.custom_text}
+                    onChange={(e) => setCustomParams({ ...customParams, custom_text: e.target.value })}
+                    placeholder="Type your custom message for the parent..."
+                    showCount
+                    maxLength={350}
+                  />
+                </Form.Item>
+              )}
+
+              {category === 'custom_meeting' && (
+                <Form.Item label="Preferred Meeting Time & Venue (मिलने का समय)" required>
+                  <Input
+                    value={customParams.meeting_time}
+                    onChange={(e) => setCustomParams({ ...customParams, meeting_time: e.target.value })}
+                    placeholder="e.g. Tomorrow during 4th Period (11:30 AM in Staff Room)"
+                  />
+                </Form.Item>
+              )}
+
+              {category === 'custom_diary_note' && (
+                <Form.Item label="Special Class Note / Diary Instruction" required>
+                  <Input.TextArea
+                    rows={3}
+                    value={customParams.note_details}
+                    onChange={(e) => setCustomParams({ ...customParams, note_details: e.target.value })}
+                    placeholder="e.g. Please check and sign page 15 of student school diary regarding science project guidelines."
+                  />
+                </Form.Item>
+              )}
+
+              {category === 'custom_health_alert' && (
+                <Form.Item label="Health / Sick Bay Details (स्वास्थ्य अपडेट)" required>
+                  <Input.TextArea
+                    rows={3}
+                    value={customParams.health_details}
+                    onChange={(e) => setCustomParams({ ...customParams, health_details: e.target.value })}
+                    placeholder="e.g. Student reported mild headache / fever in 3rd period. Currently resting in the infirmary."
                   />
                 </Form.Item>
               )}

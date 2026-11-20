@@ -12,6 +12,7 @@ import { AdminStudentsPage } from './pages/AdminStudentsPage';
 import { AdminMessagesPage } from './pages/AdminMessagesPage';
 import { AdminWhatsAppConnectPage } from './pages/AdminWhatsAppConnectPage';
 import { AdminImportDataPage } from './pages/AdminImportDataPage';
+import { AdminBroadcastPage } from './pages/AdminBroadcastPage';
 import { MainLayout } from './components/Layout/MainLayout';
 
 export const App: React.FC = () => {
@@ -143,6 +144,18 @@ export const App: React.FC = () => {
               currentUser && currentUser.role === 'admin' ? (
                 <MainLayout user={currentUser} onLogout={() => setCurrentUser(null)}>
                   <AdminStudentsPage />
+                </MainLayout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin/broadcasts"
+            element={
+              currentUser && currentUser.role === 'admin' ? (
+                <MainLayout user={currentUser} onLogout={() => setCurrentUser(null)}>
+                  <AdminBroadcastPage />
                 </MainLayout>
               ) : (
                 <Navigate to="/login" replace />

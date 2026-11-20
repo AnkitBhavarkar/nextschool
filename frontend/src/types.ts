@@ -29,7 +29,11 @@ export interface Student {
 export interface MessageLog {
   id: string;
   student_id?: string;
-  parent_id: string;
+  parent_id?: string;
+  teacher_id?: string;
+  recipient_type?: 'parent' | 'teacher' | 'school_broadcast';
+  recipient_name?: string;
+  recipient_phone?: string;
   template_category: string;
   language: string;
   rendered_message: string;
@@ -40,5 +44,16 @@ export interface MessageLog {
   retry_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface BroadcastSummary {
+  total_target_students: number;
+  total_parents_contacted: number;
+  skipped_withdrawn_consent: number;
+  sent_count: number;
+  failed_count: number;
+  broadcast_title: string;
+  category: string;
+  preview_message: string;
 }
 

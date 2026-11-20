@@ -9,7 +9,7 @@ from app.db.session import get_db
 from app.db.models import User, Teacher, Student, Parent, StudentParent, TeacherStudentAssignment, MessageLog, School
 from app.db.schemas import StudentWithParents, ParentResponse, MessageSendRequest, MessageLogResponse
 from app.api.deps import require_role, verify_csrf
-from app.services.whatsapp_service import send_meta_whatsapp_template
+from app.services.whatsapp_service import send_meta_whatsapp_template, send_meta_whatsapp_custom_text
 
 router = APIRouter()
 
@@ -37,6 +37,22 @@ TEMPLATES = {
     "weekly_growth_report": {
         "en": "Dear {parent_name}, here is the weekly progress report for {student_name} (Week {week_number}): Attendance: {attendance_percentage}%. Highlights: {highlights}. – NextSchool",
         "hi": "नमस्ते {parent_name}, {student_name} की साप्ताहिक प्रगति रिपोर्ट (सप्ताह {week_number}): उपस्थिति: {attendance_percentage}%. – NextSchool"
+    },
+    "custom_message": {
+        "en": "Dear {parent_name},\nRegarding {student_name} ({grade} - {section}):\n{custom_text}\n\n– {teacher_name}, NextSchool",
+        "hi": "नमस्ते {parent_name},\n{student_name} ({grade} - {section}) के संबंध में:\n{custom_text}\n\n– {teacher_name}, NextSchool"
+    },
+    "custom_meeting": {
+        "en": "Dear {parent_name}, I request you to kindly visit the school for a discussion regarding {student_name}'s progress. Preferred time: {meeting_time}. – {teacher_name}, NextSchool",
+        "hi": "नमस्ते {parent_name}, {student_name} की शैक्षणिक प्रगति पर चर्चा हेतु आपसे विद्यालय में मिलने का अनुरोध है। प्रस्तावित समय: {meeting_time}। – {teacher_name}, NextSchool"
+    },
+    "custom_diary_note": {
+        "en": "Dear {parent_name}, Special Class Note for {student_name}: {note_details}. Please check and sign the student diary. – {teacher_name}, NextSchool",
+        "hi": "नमस्ते {parent_name}, {student_name} के लिए विशेष कक्षा नोट: {note_details}। कृपया विद्यार्थी डायरी पर हस्ताक्षर करें। – {teacher_name}, NextSchool"
+    },
+    "custom_health_alert": {
+        "en": "Dear {parent_name}, health update regarding {student_name}: {health_details}. Please take necessary care. – {teacher_name}, NextSchool",
+        "hi": "नमस्ते {parent_name}, {student_name} के स्वास्थ्य संबंधी सूचना: {health_details}। कृपया ध्यान दें। – {teacher_name}, NextSchool"
     }
 }
 
@@ -158,23 +174,35 @@ async def send_teacher_notification(
     raw_template = TEMPLATES[cat].get(lang, TEMPLATES[cat]["en"])
 
     now = datetime.now()
+    custom_text_val = msg_data.custom_message or msg_data.custom_params.get("custom_text", "")
     default_params = {
         "parent_name": parent.full_name,
         "student_name": student.full_name,
+        "grade": student.grade,
+        "section": student.section,
+        "teacher_name": current_teacher_user.full_name,
         "date": now.strftime("%d-%b-%Y"),
         "day_of_week": now.strftime("%A"),
         "subject": msg_data.custom_params.get("subject", "Classwork"),
         "incident_description": msg_data.custom_params.get("incident_description", "Classroom disruption"),
         "week_number": now.strftime("%W"),
         "attendance_percentage": "95",
-        "highlights": "Excellent participation in class discussions"
+        "highlights": "Excellent participation in class discussions",
+        "custom_text": custom_text_val,
+        "meeting_time": msg_data.custom_params.get("meeting_time", "Tomorrow during 4th period"),
+        "note_details": msg_data.custom_params.get("note_details", "Please review and sign"),
+        "health_details": msg_data.custom_params.get("health_details", "Mild fever reported during class")
     }
     default_params.update(msg_data.custom_params or {})
 
-    try:
-        rendered_message = raw_template.format(**default_params)
-    except KeyError:
-        rendered_message = raw_template
+    # If it's a pure custom message and user typed custom text directly:
+    if cat == "custom_message" and custom_text_val and "{custom_text}" not in raw_template:
+        rendered_message = f"Dear {parent.full_name},\nRegarding {student.full_name} ({student.grade} - {student.section}):\n{custom_text_val}\n\n– {current_teacher_user.full_name}, NextSchool"
+    else:
+        try:
+            rendered_message = raw_template.format(**default_params)
+        except KeyError:
+            rendered_message = raw_template
 
     # 5. Fetch School's Central WhatsApp Credentials
     school_id = teacher.school_id
@@ -188,14 +216,22 @@ async def send_teacher_notification(
     meta_access_token = school.meta_access_token if school else "mock_meta_access_token"
 
     # 6. Dispatch via Centralized WhatsApp Service
-    dispatch_res = await send_meta_whatsapp_template(
-        phone_number_id=phone_number_id,
-        access_token=meta_access_token,
-        to_phone_number=parent.whatsapp_number,
-        template_name=cat,
-        language_code=lang,
-        template_parameters=[parent.full_name, student.full_name, now.strftime("%d-%b-%Y")]
-    )
+    if cat.startswith("custom_"):
+        dispatch_res = await send_meta_whatsapp_custom_text(
+            phone_number_id=phone_number_id,
+            access_token=meta_access_token,
+            to_phone_number=parent.whatsapp_number,
+            message_text=rendered_message
+        )
+    else:
+        dispatch_res = await send_meta_whatsapp_template(
+            phone_number_id=phone_number_id,
+            access_token=meta_access_token,
+            to_phone_number=parent.whatsapp_number,
+            template_name=cat,
+            language_code=lang,
+            template_parameters=[parent.full_name, student.full_name, now.strftime("%d-%b-%Y")]
+        )
 
     # 7. Queue message log
     message_log = MessageLog(
@@ -203,6 +239,9 @@ async def send_teacher_notification(
         sender_id=current_teacher_user.id,
         student_id=student.id,
         parent_id=parent.id,
+        recipient_type="parent",
+        recipient_name=parent.full_name,
+        recipient_phone=parent.whatsapp_number,
         template_category=cat,
         language=lang,
         rendered_message=rendered_message,

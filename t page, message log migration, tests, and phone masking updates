@@ -1,0 +1,25 @@
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/api/routes/admin.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/api/routes/teachers.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/db/models.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/db/schemas.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/services/whatsapp_service.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/components/Layout/MainLayout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/pages/AdminStudentsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/pages/AdminTeachersPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/pages/TeacherHome.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/src/types.ts', LF will be replaced by CRLF the next time Git touches it
+ README.md                                     | 182 [32m++++++++[m[31m----[m
+ backend/app/api/routes/admin.py               | 278 [32m+++++++++++++++++[m[31m-[m
+ backend/app/api/routes/teachers.py            |  67 [32m++++[m[31m-[m
+ backend/app/db/models.py                      |   6 [32m+[m[31m-[m
+ backend/app/db/schemas.py                     |  53 [32m+++[m[31m-[m
+ backend/app/services/whatsapp_service.py      |  73 [32m+++++[m
+ frontend/src/App.tsx                          |  13 [32m+[m
+ frontend/src/components/Layout/MainLayout.tsx |   4 [32m+[m[31m-[m
+ frontend/src/pages/AdminStudentsPage.tsx      |   3 [32m+[m[31m-[m
+ frontend/src/pages/AdminTeachersPage.tsx      | 392 [32m+++++++++++++++++++++++++[m[31m-[m
+ frontend/src/pages/TeacherHome.tsx            | 123 [32m+++++++[m[31m-[m
+ frontend/src/types.ts                         |  17 [32m+[m[31m-[m
+ 12 files changed, 1114 insertions(+), 97 deletions(-)

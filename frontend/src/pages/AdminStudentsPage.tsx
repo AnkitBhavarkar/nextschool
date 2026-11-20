@@ -3,6 +3,7 @@ import { Card, Table, Tag, Typography, Space, Button, message, Input } from 'ant
 import { ReloadOutlined, SearchOutlined, WhatsAppOutlined } from '@ant-design/icons';
 import { apiClient } from '../api/client';
 import { Student } from '../types';
+import { maskPhoneNumber } from '../utils/maskPhone';
 
 const { Title, Text } = Typography;
 
@@ -69,7 +70,7 @@ export const AdminStudentsPage: React.FC = () => {
                 <Space>
                   <WhatsAppOutlined style={{ color: hasConsent ? '#52c41a' : '#bfbfbf' }} />
                   <Text>{p.full_name} <span style={{ fontSize: 11, color: '#8c8c8c' }}>({p.relationship_type})</span></Text>
-                  <Text code>{p.whatsapp_number}</Text>
+                  <Text code>{maskPhoneNumber(p.whatsapp_number)}</Text>
                 </Space>
                 <Tag color={hasConsent ? 'green' : 'red'}>
                   {hasConsent ? 'Consent Active' : 'Opted Out'}

@@ -109,7 +109,11 @@ class MessageLog(Base):
     school_id = Column(String(36), ForeignKey("schools.id", ondelete="CASCADE"), nullable=True)
     sender_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     student_id = Column(String(36), ForeignKey("students.id"), nullable=True)
-    parent_id = Column(String(36), ForeignKey("parents.id"), nullable=False)
+    parent_id = Column(String(36), ForeignKey("parents.id"), nullable=True)
+    teacher_id = Column(String(36), ForeignKey("teachers.id"), nullable=True)
+    recipient_type = Column(String(50), default="parent", nullable=False) # parent, teacher, school_broadcast
+    recipient_name = Column(String(255), nullable=True)
+    recipient_phone = Column(String(50), nullable=True)
     template_category = Column(String(100), nullable=False)
     language = Column(String(20), default="en", nullable=False)
     rendered_message = Column(Text, nullable=False)
